@@ -1,0 +1,26 @@
+{
+  "titleId": "016fb995a9c10000",
+  "name": "ue4cheatcreator",
+  "version": "0.0.1",
+  "private": true,
+  "description": "",
+  "scripts": {
+    "build": "esbuild --bundle --sourcemap --sources-content=false --target=es2022 --format=esm --outdir=romfs src/main.js && nxjs-nro",
+    "nro": "nxjs-nro",
+    "nsp": "nxjs-nsp"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@nx.js/nro": "^0.0.55",
+    "@nx.js/nsp": "^0.0.55",
+    "@nx.js/runtime": "^0.0.55",
+    "esbuild": "^0.17.19"
+  },
+  "author": {
+    "name": "biase-d",
+    "email": "tashingachikwanha@gmail.com"
+  },
+  "dependencies": {
+    "@nx.js/constants": "^0.2.0"
+  }
+}
