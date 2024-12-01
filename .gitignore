@@ -5,3 +5,5 @@
 /romfs/main.js.map
 .DS_Store
 /.bak
+*.psd
+*.jpg
