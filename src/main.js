@@ -75,6 +75,8 @@ function updateVisibleFiles() {
 function updateFileList() {
   files = readDirectory(currentPath) || [];
   updateVisibleFiles();
+  scrollOffset = 0;
+  currentIndex = 0;
 }
 
 // Handle gamepad input with throttle
@@ -129,18 +131,29 @@ function navigateToParentDirectory() {
   }
 }
 
-// Function to navigate to next file
+// Function to navigate to the next file
 function navigateToNextFile() {
   if (currentIndex < visibleFiles.length - 1) {
     currentIndex += 1;
+
+    // Check if the new index exceeds the visible range and adjust scroll
+    if (currentIndex >= scrollOffset + maxVisibleFiles) {
+      scrollOffset += 1; // Scroll down
+    }
+
     drawList();
   }
 }
 
-// Function to navigate to previous file
+// Function to navigate to the previous file
 function navigateToPreviousFile() {
   if (currentIndex > 0) {
     currentIndex -= 1;
+    // Check if the new index is before the visible range and adjust scroll
+    if (currentIndex < scrollOffset) {
+      scrollOffset -= 1; // Scroll up
+    }
+
     drawList();
   }
 }
@@ -149,11 +162,13 @@ function navigateToPreviousFile() {
 function navigateToDirectory(newDir) {
   currentPath = currentPath + '/' + newDir;
   updateFileList();
-  currentIndex = 0;
   drawList();
 }
 
-// Function to draw the list of files
+// Track the current scroll offset (initially 0)
+let scrollOffset = 0;
+const maxVisibleFiles = 10; // Maximum number of items visible at a time
+
 function drawList() {
   ctx.clearRect(0, 0, screen.width, screen.height);
 
@@ -166,12 +181,12 @@ function drawList() {
 
   // Top Bar Content
   ctx.fillStyle = colors.text;
-  ctx.font = '30px system-ui'
-  ctx.fillText('ue4cheatcreator', screen.width * 0.102109375, height.topBar * 0.6)
+  ctx.font = '30px system-ui';
+  ctx.fillText('ue4cheatcreator', screen.width * 0.102109375, height.topBar * 0.6);
 
   // Sidebar
   ctx.fillStyle = colors.sidebar;
-  ctx.fillRect(0, height.topBar, width.sideBar, height.sideBar)
+  ctx.fillRect(0, height.topBar, width.sideBar, height.sideBar);
 
   // Top bar bottom line
   ctx.beginPath();
@@ -183,7 +198,7 @@ function drawList() {
 
   // Bottom bar top line
   ctx.beginPath();
-  ctx.moveTo(40 , height.sideBar + height.topBar);
+  ctx.moveTo(40, height.sideBar + height.topBar);
   ctx.lineTo(screen.width - 40, (height.sideBar + height.topBar));
   ctx.strokeStyle = colors.text;
   ctx.lineWidth = 1; 
@@ -192,17 +207,17 @@ function drawList() {
   // Bottom Bar Content
   ctx.fillStyle = colors.text;
   ctx.font = '20px system-ui';
-  ctx.fillText('Back', screen.width * 0.102109375, height.sideBar + height.topBar + 50);
+  ctx.fillText('Press + to exit', screen.width * 0.102109375, height.sideBar + height.topBar + 50);
 
-  // List Size 
-  let maxVisibleFiles = 10;
-  let contentHeight = 500;
-  
-  visibleFiles.forEach((item, index) => {
+  // Draw visible items with scrolling
+  const startIndex = scrollOffset;
+  const endIndex = Math.min(visibleFiles.length, startIndex + maxVisibleFiles);
+
+  visibleFiles.slice(startIndex, endIndex).forEach((item, index) => {
     const displayText = isValid.titleID(item)
       ? `${new Switch.Application(BigInt(`0x${item}`)).name}`
       : item;
-    ctx.fillStyle = currentIndex === index ? colors.select.text : colors.text;  // Highlight current item
+    ctx.fillStyle = currentIndex === (startIndex + index) ? colors.select.text : colors.text; // Highlight current item
     ctx.fillText(displayText, width.content, height.topBar + 60 + index * 50);
   });
 }
