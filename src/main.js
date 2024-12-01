@@ -1,6 +1,30 @@
 import { Button } from "@nx.js/constants";
 import config from '../src/config.json'
 
+const colors = {
+  bgColor: '#2d2d2d',
+  sidebar: '#323232',
+  select: {
+    text: '#00ffc5',
+    border: '#74deeb',
+  },
+  text: '#fff',
+  notes: '#9f9f9f'
+}
+
+let ctx = screen.getContext('2d');
+
+const height = {
+  topBar: screen.height * 0.1216666667,
+  sideBar: screen.height * 0.7783333333
+    // bottomBar: screen.height * 0.8986111111
+}
+
+const width = {
+  sideBar: screen.width * 0.3203125,
+  content:  screen.width * 0.367109375
+}
+
 let currentPath = 'sdmc:/switch/UE4cfgdumper';
 let currentIndex = 0;
 let files = [];
@@ -8,16 +32,22 @@ let files = [];
 // Cache filtered files
 let visibleFiles = [];
 
-const inputCooldown = 75; // milliseconds
+const inputCooldown = 200; // milliseconds
 let lastInputTime = 0;
 
-// Validation of title IDs
 const isValid = {
   titleID: (titleID) => {
     return /^01[0-9A-Fa-f]{11}000$/.test(titleID)
   },
   BID: (bid) => {
     return /^[0-9A-Fa-f]{16}$/.test(bid)
+  },
+  config: (config) => {
+    if (!config.cheatOptions || !Array.isArray(config.cheatOptions)) {
+      console.error('Invalid config: missing or invalid "cheatOptions"');
+      return false;
+    }
+    return true;
   }
 }
 
@@ -125,29 +155,56 @@ function navigateToDirectory(newDir) {
 
 // Function to draw the list of files
 function drawList() {
-  let ctx = screen.getContext('2d');
   ctx.clearRect(0, 0, screen.width, screen.height);
+
+  // Font
   ctx.font = '20px system-ui';
 
+  // Background 
+  ctx.fillStyle = colors.bgColor;
+  ctx.fillRect(0, 0, screen.width, screen.height);
+
+  // Top Bar Content
+  ctx.fillStyle = colors.text;
+  ctx.font = '30px system-ui'
+  ctx.fillText('ue4cheatcreator', screen.width * 0.102109375, height.topBar * 0.6)
+
+  // Sidebar
+  ctx.fillStyle = colors.sidebar;
+  ctx.fillRect(0, height.topBar, width.sideBar, height.sideBar)
+
+  // Top bar bottom line
+  ctx.beginPath();
+  ctx.moveTo(40, height.topBar);
+  ctx.lineTo((screen.width - 40), height.topBar);
+  ctx.strokeStyle = colors.text;
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Bottom bar top line
+  ctx.beginPath();
+  ctx.moveTo(40 , height.sideBar + height.topBar);
+  ctx.lineTo(screen.width - 40, (height.sideBar + height.topBar));
+  ctx.strokeStyle = colors.text;
+  ctx.lineWidth = 1; 
+  ctx.stroke();
+
+  // Bottom Bar Content
+  ctx.fillStyle = colors.text;
+  ctx.font = '20px system-ui';
+  ctx.fillText('Back', screen.width * 0.102109375, height.sideBar + height.topBar + 50);
+
+  // List Size 
+  let maxVisibleFiles = 10;
+  let contentHeight = 500;
+  
   visibleFiles.forEach((item, index) => {
     const displayText = isValid.titleID(item)
-      ? `${item} - ${new Switch.Application(BigInt(`0x${item}`)).name}`
+      ? `${new Switch.Application(BigInt(`0x${item}`)).name}`
       : item;
-
-    ctx.fillStyle = 'white'
-    ctx.fillText('Path: ' + currentPath, 0, 0 + 30);
-    ctx.fillStyle = currentIndex === index ? "green" : "white";  // Highlight current item
-    ctx.fillText(displayText, 0, 70 + index * 30); // Adjust 'index * 30' for spacing
+    ctx.fillStyle = currentIndex === index ? colors.select.text : colors.text;  // Highlight current item
+    ctx.fillText(displayText, width.content, height.topBar + 60 + index * 50);
   });
-}
-
-// Validate configuration before using it
-function validateConfig(config) {
-  if (!config.cheatOptions || !Array.isArray(config.cheatOptions)) {
-    console.error('Invalid config: missing or invalid "cheatOptions"');
-    return false;
-  }
-  return true;
 }
 
 // Function to parse the log file (for cheat generation)
@@ -179,7 +236,7 @@ function parseLogFile (logFile) {
 
 // Function to generate cheats
 function generateCheats(parsedFile, config, name) {
-  if (parsedFile && validateConfig(config)) {
+  if (parsedFile && isValid.config(config)) {
     let result = [];
     const instruction = '680F0000';
 
@@ -225,11 +282,10 @@ function generateCheats(parsedFile, config, name) {
     // Convert the result array to a string
     result = result.join('\n');
 
-    // Write to file in UTF-8
     try {
       const filePath = currentPath.replace('switch/UE4cfgdumper', 'atmosphere/contents') + '/cheats/' + name.split('.')[0] + '.txt';
-      const encoder = new TextEncoder(); // Create a new TextEncoder for UTF-8 encoding
-      const encodedResult = encoder.encode(result); // Encode the result string
+      const encoder = new TextEncoder();
+      const encodedResult = encoder.encode(result);
 
       // Writing the encoded result
       Switch.writeFileSync(filePath, encodedResult);
@@ -244,7 +300,7 @@ function generateCheats(parsedFile, config, name) {
 function initialize() {
   processGamepadInput()
   updateFileList(); // Initialize file list
-  drawList();       // Draw the initial file list
+  drawList(); // Draw the initial file list
 }
 
 initialize()
